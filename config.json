@@ -1,0 +1,46 @@
+{
+  "clubName": "Dinamica Sport · Staff Istruttori",
+  "coordinatorPinHash": "e496e7378047eb3dbdfb134e1e23f66dfdf521086b42164a60ca0f8144079113",
+  "apiUrl": "https://script.google.com/macros/s/AKfycbyoMPGp7PUtlbDRmU5M0fVcKGrUYgc6A8wYYmzpxAD3HODUdEBvwEuaDUtnJyfw-con/exec",
+  "syncIntervalSeconds": 20,
+  "instructors": [
+    "Luca",
+    "Riccardo",
+    "Mariagiulia",
+    "Elisa",
+    "Agata",
+    "Carlo",
+    "Sara",
+    "Noemi",
+    "Sofia",
+    "Laura"
+  ],
+  "groups": [
+    "Tartarughe Marine",
+    "Delfini",
+    "2 Corsia (Avanzate)",
+    "Vaschetta (Ambientamento)",
+    "Esordienti C",
+    "Reclutamento",
+    "Agonistica",
+    "Ragazzi",
+    "Master Adulti",
+    "Hydrobike & Acquagym"
+  ],
+  "quickTags": [
+    "Gestione fila",
+    "Esercizio riuscito",
+    "Difficoltà ascolto",
+    "Ambientamento",
+    "Respirazione sbarra",
+    "Gambe stile/dorso",
+    "Bracciata e scivolamento",
+    "Gamba rana",
+    "Delfinizzazione",
+    "Tuffi dal blocco",
+    "Capovolte e rotolamenti",
+    "Apnea",
+    "Gioco fine lezione",
+    "Sicurezza vasca"
+  ]
+}

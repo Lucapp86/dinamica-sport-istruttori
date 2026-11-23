@@ -1,0 +1,10 @@
+# Git ignore
+.DS_Store
+Thumbs.db
+*.tmp
+*.log
+
+# Dati e fogli locali riservati
+*.xlsx
+*.xls
+*.csv

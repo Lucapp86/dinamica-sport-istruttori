@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0284c7">
+  <title>Dinamica Sport · Staff Istruttori</title>
+  <link rel="icon" type="image/png" href="Logo%20tondo.png">
+  <link rel="apple-touch-icon" href="Logo%20tondo.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=20261123_secure_v4">
+</head>
+
+<body>
+
+  <!-- BARRA SUPERIORE (TOPBAR) -->
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand-section">
+        <img src="Logo%20tondo.png" alt="Logo Dinamica Sport" class="brand-logo" onerror="this.style.display='none'">
+        <div class="brand-info">
+          <h1 id="app-club-name">Dinamica Sport</h1>
+          <div class="brand-subtitle">
+            <span>Staff Istruttori</span>
+            <div id="sync-status-badge" class="sync-badge" title="Stato sincronizzazione">
+              <span id="sync-dot" class="sync-dot"></span>
+              <span id="sync-text">Pronto</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="topbar-actions">
+        <button type="button" id="btn-user-profile" class="btn btn-light btn-sm" title="Il tuo profilo istruttore">
+          <span id="user-topbar-avatar" class="mini-avatar" style="width: 20px; height: 20px; font-size: 10px; background: #0284c7;">👤</span>
+          <span id="user-topbar-name">Accedi</span>
+        </button>
+        <button type="button" id="refresh-btn" class="btn btn-light btn-sm" title="Aggiorna dati dal Google Sheet">
+          🔄 <span class="hide-mobile">Aggiorna</span>
+        </button>
+        <button type="button" id="settings-btn" class="btn btn-light btn-sm" title="Impostazioni & Coordinatore">
+          ⚙️ <span id="coordinator-status-label" class="hide-mobile">Coordinatore</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- SELETTORE SCHEDE (TABS) -->
+  <nav class="nav-tabs" aria-label="Navigazione principale">
+    <div class="nav-tabs-inner">
+      <button type="button" class="tab-btn active" data-tab="tab-feedback">
+        💬 Feedback <span id="badge-feedback-count" class="badge-count">0</span>
+      </button>
+      <button type="button" class="tab-btn" data-tab="tab-turni">
+        📅 Planning Turni
+      </button>
+      <button type="button" class="tab-btn" data-tab="tab-news">
+        📢 Bacheca <span id="badge-news-count" class="badge-count">0</span>
+      </button>
+      <button type="button" class="tab-btn" data-tab="tab-brevetti">
+        🏅 Schemario Brevetti
+      </button>
+    </div>
+  </nav>
+
+  <!-- CONTENITORE PRINCIPALE -->
+  <main class="main-container">
+
+    <!-- ===================================================================== -->
+    <!-- 1. TAB FEEDBACK & DIARIO LEZIONI -->
+    <!-- ===================================================================== -->
+    <section id="tab-feedback" class="tab-content">
+      <div class="section-header">
+        <div>
+          <div class="section-pill-tag">💬 Diario di Vasca</div>
+          <h2 class="section-title">Registro & Feedback Lezioni</h2>
+          <p class="section-subtitle">Scambio di esperienze, consigli, criticità ed esercizi tra colleghi</p>
+        </div>
+        <button type="button" id="open-new-feedback-btn" class="btn btn-primary">
+          ✏️ Nuovo Feedback
+        </button>
+      </div>
+
+      <!-- FILTRI & RICERCA -->
+      <div class="controls-card">
+        <div class="search-input-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="feedback-search-input" placeholder="Cerca per testo, tag, gruppo o istruttore...">
+        </div>
+        <div class="chips-row">
+          <button type="button" class="chip active" data-filter="all">Tutti</button>
+          <button type="button" class="chip" data-filter="positivo">👍 Esercizi TOP</button>
+          <button type="button" class="chip" data-filter="criticità">⚠️ Difficoltà & Fila</button>
+          <button type="button" class="chip" data-filter="my-posts">I Miei Post</button>
+        </div>
+      </div>
+
+      <!-- LISTA FEEDBACK -->
+      <div id="feedback-list" class="cards-list"></div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- 2. TAB PLANNING TURNI -->
+    <!-- ===================================================================== -->
+    <section id="tab-turni" class="tab-content hidden">
+      <div class="section-header">
+        <div>
+          <div class="section-pill-tag">📅 Calendario Settimanale</div>
+          <h2 class="section-title">Planning Vasca & Turni</h2>
+          <p class="section-subtitle">Turni vasca, corsie assegnate e gestione sostituzioni</p>
+        </div>
+      </div>
+
+      <!-- SELETTORE GIORNI -->
+      <div class="days-pills" id="days-pills-bar">
+        <button type="button" class="day-pill active" data-day="Lunedì">Lunedì</button>
+        <button type="button" class="day-pill" data-day="Martedì">Martedì</button>
+        <button type="button" class="day-pill" data-day="Mercoledì">Mercoledì</button>
+        <button type="button" class="day-pill" data-day="Giovedì">Giovedì</button>
+        <button type="button" class="day-pill" data-day="Venerdì">Venerdì</button>
+        <button type="button" class="day-pill" data-day="Sabato">Sabato</button>
+      </div>
+
+      <!-- FILTRO ISTRUTTORE -->
+      <div class="controls-card" style="margin-bottom: 14px;">
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <label for="filter-shift-instructor" style="font-size: 13px; font-weight: 700; white-space: nowrap;">Filtra Istruttore:</label>
+          <select id="filter-shift-instructor" class="form-control" style="padding: 6px 10px;">
+            <option value="all">Tutti gli istruttori</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- LISTA TURNI -->
+      <div id="turni-list" class="cards-list"></div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- 3. TAB BACHECA & NEWS -->
+    <!-- ===================================================================== -->
+    <section id="tab-news" class="tab-content hidden">
+      <div class="section-header">
+        <div>
+          <div class="section-pill-tag">📢 Comunicazioni Ufficiali</div>
+          <h2 class="section-title">Bacheca & Direzione Vasca</h2>
+          <p class="section-subtitle">Chiusure, inizio prove brevetti, riunioni e comunicazioni ufficiali</p>
+        </div>
+        <button type="button" id="open-new-news-btn" class="btn btn-primary">
+          📢 Pubblica Avviso
+        </button>
+      </div>
+
+      <!-- LISTA NEWS -->
+      <div id="news-list" class="cards-list"></div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- 4. TAB SCHEMARIO BREVETTI UFFICIALI & REGISTRO VALUTAZIONI -->
+    <!-- ===================================================================== -->
+    <section id="tab-brevetti" class="tab-content hidden">
+      <div class="section-header">
+        <div>
+          <div class="section-pill-tag">🏅 Didattica & Certificazioni</div>
+          <h2 class="section-title">Brevetti Dinamica Sport</h2>
+          <p class="section-subtitle">Schemario ufficiale, valutazione allievi in vasca e statistiche prove</p>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" id="btn-print-brevetti" class="btn btn-outline btn-sm" title="Stampa o esporta scheda in PDF">
+            🖨️ Stampa Schede
+          </button>
+        </div>
+      </div>
+
+      <!-- SUB-NAVIGAZIONE BREVETTI -->
+      <div class="sub-nav-bar" id="brevetti-sub-nav">
+        <button type="button" class="sub-nav-pill active" data-subtab="subtab-schede">
+          📖 Schemario Ufficiale
+        </button>
+        <button type="button" class="sub-nav-pill" data-subtab="subtab-valuta">
+          📝 Valuta Allievo
+        </button>
+        <button type="button" class="sub-nav-pill" data-subtab="subtab-stats">
+          📊 Storico & Statistiche <span id="badge-eval-count" class="badge-count">0</span>
+        </button>
+      </div>
+
+      <!-- SOTTO-SCHEDA 1: SCHEMARIO UFFICIALE -->
+      <div id="subtab-schede" class="subtab-content">
+        <!-- SELETTORE LIVELLI BREVETTO -->
+        <div class="brevetto-selector-bar">
+          <button type="button" class="brevetto-select-btn active" data-brevetto="all">
+            📋 Tutti i 3 Brevetti
+          </button>
+          <button type="button" class="brevetto-select-btn" data-brevetto="liv_tarta">
+            🐢 1° Tartarughe Marine
+          </button>
+          <button type="button" class="brevetto-select-btn" data-brevetto="liv_delf">
+            🐬 2° Delfini
+          </button>
+          <button type="button" class="brevetto-select-btn" data-brevetto="liv_2corsia">
+            🏊 3° 2 Corsia (Avanzate)
+          </button>
+        </div>
+
+        <!-- BARRA DI RICERCA VELOCE NELLE PROVE -->
+        <div class="controls-card" style="margin-bottom: 14px;">
+          <div class="search-input-wrap">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="brevetto-search-input" placeholder="Cerca una prova (es. apnea, scivolamento, tuffo, sbarra, rana)...">
+          </div>
+        </div>
+
+        <!-- BARRA STRUMENTI VALUTAZIONE INTERATTIVA ALLIEVO A BORDO VASCA -->
+        <div class="evaluation-toolbar">
+          <div class="eval-stats">
+            <div class="eval-title">⏱️ Modalità consultazione rapida a Bordo Vasca</div>
+            <div id="eval-progress-label" style="font-size: 11px; opacity: 0.9;">
+              Tocca le prove superate per segnarle (0 superate)
+            </div>
+            <div class="eval-progress-bar-wrap">
+              <div id="eval-progress-fill" class="eval-progress-fill"></div>
+            </div>
+          </div>
+          <button type="button" id="btn-reset-eval" class="btn btn-light btn-sm" style="font-size: 11px;">
+            🔄 Azzera spunte
+          </button>
+        </div>
+
+        <!-- LISTA SCHEDE BREVETTI -->
+        <div id="brevetti-list" class="cards-list"></div>
+      </div>
+
+      <!-- SOTTO-SCHEDA 2: NUOVA VALUTAZIONE ALLIEVO -->
+      <div id="subtab-valuta" class="subtab-content hidden">
+        <div class="eval-form-card">
+          <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+            📝 Registra Prova Brevetto Allievo
+          </h3>
+
+          <form id="form-valuta-allievo">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">Livello da Esaminare</label>
+                <select id="valuta-livello-select" class="form-control" required>
+                  <option value="liv_tarta">🐢 1° Tartarughe Marine</option>
+                  <option value="liv_delf">🐬 2° Delfini</option>
+                  <option value="liv_2corsia">🏊 3° 2 Corsia (Avanzate)</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">Data Valutazione</label>
+                <input type="date" id="valuta-data" class="form-control" required>
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="valuta-nome-allievo">Nome e Cognome Allievo</label>
+                <input type="text" id="valuta-nome-allievo" class="form-control" placeholder="es. Marco Rossi" required>
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">Istruttore Esaminatore</label>
+                <div class="author-certified-box" style="padding: 7px 10px;">
+                  <span id="valuta-evaluator-avatar" class="mini-avatar" style="width: 20px; height: 20px; font-size: 10px;">👤</span>
+                  <span id="valuta-evaluator-name" style="font-weight: 800; font-size: 12px;">Istruttore</span>
+                  <span class="badge badge-positive" style="font-size: 9px; margin-left: auto;">✓ Certificato</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- PROVE DA SPUNTARE (DINAMICHE IN BASE AL LIVELLO) -->
+            <div style="margin-top: 16px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <label class="form-label" style="margin-bottom: 0;">Spunta le Prove Superate:</label>
+                <span id="valuta-summary-score" class="badge badge-info" style="font-size: 11px; font-weight: 800;">
+                  0 su 0 superate (0%)
+                </span>
+              </div>
+              <div id="valuta-checklist-box" style="display: flex; flex-direction: column; gap: 6px; max-height: 380px; overflow-y: auto; padding-right: 4px;"></div>
+            </div>
+
+            <!-- ESITO CALCOLATO -->
+            <div style="display: flex; align-items: center; justify-content: space-between; background: var(--surface-alt); padding: 12px 14px; border-radius: var(--radius-sm); margin: 16px 0; border: 1px solid var(--border);">
+              <div>
+                <div style="font-size: 12px; color: var(--text-muted); font-weight: 700;">Esito Valutazione:</div>
+                <div id="valuta-esito-preview" style="font-size: 15px; font-weight: 800; color: var(--text);">In compilazione...</div>
+              </div>
+              <div id="valuta-badge-esito" class="badge" style="font-size: 12px; padding: 6px 12px;">⏳ In Corso</div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="valuta-note">Note e feedback per l'allievo (opzionale)</label>
+              <textarea id="valuta-note" class="form-control" rows="2" placeholder="es. Ottimo galleggiamento e capovolta, riprovare battuta rana la prossima settimana..."></textarea>
+            </div>
+
+            <div style="display: flex; gap: 8px;">
+              <button type="reset" id="btn-cancel-valuta" class="btn btn-outline" style="flex: 1;">Annulla / Svuota</button>
+              <button type="submit" id="btn-save-valuta" class="btn btn-primary" style="flex: 2;">💾 Salva nel Registro Ufficiale</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- SOTTO-SCHEDA 3: STORICO & STATISTICHE BREVETTI -->
+      <div id="subtab-stats" class="subtab-content hidden">
+        <!-- KPI COUNTERS -->
+        <div class="eval-kpi-grid">
+          <div class="eval-kpi-card">
+            <div class="eval-kpi-val" id="stat-total-evals">0</div>
+            <div class="eval-kpi-title">Allievi Valutati</div>
+          </div>
+          <div class="eval-kpi-card">
+            <div class="eval-kpi-val" id="stat-pass-rate" style="color: #059669;">0%</div>
+            <div class="eval-kpi-title">Tasso Idoneità</div>
+          </div>
+          <div class="eval-kpi-card">
+            <div class="eval-kpi-val" id="stat-total-passed" style="color: #059669;">0</div>
+            <div class="eval-kpi-title">Brevetti Conseguite</div>
+          </div>
+          <div class="eval-kpi-card">
+            <div class="eval-kpi-val" id="stat-total-review" style="color: #d97706;">0</div>
+            <div class="eval-kpi-title">Da Rivedere</div>
+          </div>
+        </div>
+
+        <!-- SELEZIONE FILTRO LIVELLO STATISTICHE -->
+        <div class="chips-row" style="margin-bottom: 14px;">
+          <button type="button" class="chip active" data-stat-filter="all">Tutti i Livelli</button>
+          <button type="button" class="chip" data-stat-filter="liv_tarta">🐢 Tartarughe Marine</button>
+          <button type="button" class="chip" data-stat-filter="liv_delf">🐬 Delfini</button>
+          <button type="button" class="chip" data-stat-filter="liv_2corsia">🏊 2 Corsia</button>
+        </div>
+
+        <!-- CLASSIFICA PROVE MENO SUPERATE (ANALISI CRITICITÀ) -->
+        <div class="weakness-card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+            <div>
+              <h3 style="font-size: 15px; font-weight: 800; color: var(--text);">
+                📊 Analisi Prove Più Difficili (Criticità Vasca)
+              </h3>
+              <p style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+                Evidenzia le prove con tasso di superamento più basso per orientare gli esercizi delle prossime lezioni.
+              </p>
+            </div>
+          </div>
+          <div id="weakness-chart-list">
+            <div style="font-size: 13px; color: var(--text-muted); text-align: center; padding: 20px 0;">
+              Nessuna valutazione ancora registrata nel cloud. Valuta gli allievi nella scheda "Valuta Allievo" per visualizzare le statistiche!
+            </div>
+          </div>
+        </div>
+
+        <!-- REGISTRO CRONOLOGICO VALUTAZIONI ALLIEVI -->
+        <div class="controls-card" style="margin-bottom: 14px;">
+          <div class="search-input-wrap">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="stat-search-student" placeholder="Cerca allievo nel registro o filtra per esaminatore...">
+          </div>
+        </div>
+
+        <div id="eval-history-list" class="cards-list"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ========================================================================= -->
+  <!-- MODALI DI INSERIMENTO E GESTIONE -->
+  <!-- ========================================================================= -->
+
+  <!-- MODAL 1: NUOVO FEEDBACK LEZIONE -->
+  <div id="modal-feedback" class="modal-overlay">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <h3 class="modal-title">✏️ Nuovo Feedback di Lezione</h3>
+        <button type="button" class="close-btn" data-close="modal-feedback">&times;</button>
+      </div>
+      <form id="form-feedback">
+        <div class="type-selector-row">
+          <button type="button" id="btn-type-positive" class="type-option-btn selected-pos" data-type="positivo">
+            👍 Esercizio TOP / Successo
+          </button>
+          <button type="button" id="btn-type-critic" class="type-option-btn" data-type="criticità">
+            ⚠️ Difficoltà / Criticità
+          </button>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Autore Certificato (Tuo Profilo)</label>
+          <div id="fb-author-display" class="author-certified-box">
+            <span id="fb-author-avatar" class="mini-avatar" style="width: 22px; height: 22px; font-size: 11px;">👤</span>
+            <span id="fb-author-name" style="font-weight: 800;">Istruttore</span>
+            <span class="badge badge-positive" style="font-size: 10px; margin-left: auto;">✓ Certificato</span>
+          </div>
+          <input type="hidden" id="fb-author" value="">
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div class="form-group">
+            <label class="form-label" for="fb-date">Data</label>
+            <input type="date" id="fb-date" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="fb-time">Orario / Fascia</label>
+            <input type="text" id="fb-time" class="form-control" placeholder="es. 17:00 - 17:45">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="fb-group">Gruppo / Livello & Corsia</label>
+          <select id="fb-group" class="form-control"></select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Tag Rapidi (tocca per aggiungere)</label>
+          <div id="quick-tags-container" class="quick-tags-picker"></div>
+          <input type="hidden" id="fb-tags-hidden" value="">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="fb-text">Cosa è successo? Racconta feedback o esercizio</label>
+          <textarea id="fb-text" class="form-control" placeholder="Descrivi l'esercizio provato o le difficoltà riscontrate con i bambini (es. gestione fila, attenzione, tecnica)..." required></textarea>
+        </div>
+
+        <div style="display: flex; gap: 8px; margin-top: 16px;">
+          <button type="button" class="btn btn-outline" data-close="modal-feedback" style="flex: 1;">Annulla</button>
+          <button type="submit" class="btn btn-primary" style="flex: 2;">Pubblica sul Diario</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 2: RISPONDI / COMMENTA FEEDBACK -->
+  <div id="modal-reply" class="modal-overlay">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <h3 class="modal-title">💬 Rispondi al Collega</h3>
+        <button type="button" class="close-btn" data-close="modal-reply">&times;</button>
+      </div>
+      <form id="form-reply">
+        <input type="hidden" id="reply-fb-id" value="">
+        <div id="reply-preview-box" style="background: var(--surface-alt); padding: 10px; border-radius: 8px; margin-bottom: 12px; font-size: 13px; border-left: 3px solid var(--primary);"></div>
+
+        <div class="form-group">
+          <label class="form-label">Autore Certificato (Tuo Profilo)</label>
+          <div id="reply-author-display" class="author-certified-box">
+            <span id="reply-author-avatar" class="mini-avatar" style="width: 20px; height: 20px; font-size: 10px;">👤</span>
+            <span id="reply-author-name" style="font-weight: 800;">Istruttore</span>
+            <span class="badge badge-positive" style="font-size: 10px; margin-left: auto;">✓ Certificato</span>
+          </div>
+          <input type="hidden" id="reply-author" value="">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="reply-text">Tuo consiglio o feedback</label>
+          <textarea id="reply-text" class="form-control" placeholder="Scrivi un consiglio, variante di esercizio o soluzione che ha funzionato con te..." required></textarea>
+        </div>
+
+        <div style="display: flex; gap: 8px; margin-top: 16px;">
+          <button type="button" class="btn btn-outline" data-close="modal-reply" style="flex: 1;">Annulla</button>
+          <button type="submit" class="btn btn-primary" style="flex: 2;">Invia Risposta</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 3: NUOVO AVVISO / NEWS (COORDINATORE) -->
+  <div id="modal-news" class="modal-overlay">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <h3 class="modal-title">📢 Pubblica Comunicazione Staff</h3>
+        <button type="button" class="close-btn" data-close="modal-news">&times;</button>
+      </div>
+      <form id="form-news">
+        <div class="form-group">
+          <label class="form-label" for="news-title">Titolo Avviso</label>
+          <input type="text" id="news-title" class="form-control" placeholder="es. Sessione Brevetti di Natale o Chiusura Ponte" required>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div class="form-group">
+            <label class="form-label" for="news-category">Categoria</label>
+            <select id="news-category" class="form-control">
+              <option value="avviso">📢 Avviso Generale</option>
+              <option value="brevetti">🏆 Sessione Brevetti</option>
+              <option value="chiusura">🔴 Chiusura Impianto</option>
+              <option value="riunione">🏊 Riunione Staff</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="news-author">Autore</label>
+            <input type="text" id="news-author" class="form-control" value="Direzione Vasca" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="news-text">Testo della comunicazione</label>
+          <textarea id="news-text" class="form-control" rows="4" placeholder="Dettagli dell'avviso per gli istruttori..." required></textarea>
+        </div>
+
+        <div class="form-group" style="display: flex; align-items: center; gap: 8px;">
+          <input type="checkbox" id="news-pinned" style="width: 18px; height: 18px;">
+          <label for="news-pinned" style="font-size: 13px; font-weight: 600; cursor: pointer;">Fissa questo avviso in alto (In Evidenza)</label>
+        </div>
+
+        <div style="display: flex; gap: 8px; margin-top: 16px;">
+          <button type="button" class="btn btn-outline" data-close="modal-news" style="flex: 1;">Annulla</button>
+          <button type="submit" class="btn btn-primary" style="flex: 2;">Pubblica Avviso</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: RICHIESTA SOSTITUZIONE TURNO (TITOLARE) -->
+  <div id="modal-sub-request" class="modal-overlay">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <h3 class="modal-title">🔁 Chiedi Cambio Turno</h3>
+        <button type="button" class="close-btn" data-close="modal-sub-request">&times;</button>
+      </div>
+      <form id="form-sub-request">
+        <input type="hidden" id="req-shift-id" value="">
+        <div id="req-shift-details" class="shift-details-box" style="background: var(--surface-alt); padding: 12px; border-radius: 8px; margin-bottom: 14px; font-size: 13px;"></div>
+        <div class="form-group">
+          <label class="form-label" for="req-sub-note">Motivo del cambio (opzionale)</label>
+          <input type="text" id="req-sub-note" class="form-control" placeholder="es. Febbre, esame universitario, impegno familiare...">
+        </div>
+        <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #92400e; margin-bottom: 16px;">
+          ℹ️ Il turno passerà in stato <strong>"Cercasi Sostituto" 🟡</strong> e sarà visibile a tutti i colleghi, che potranno accettarlo con un clic.
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" class="btn btn-outline" data-close="modal-sub-request" style="flex: 1;">Annulla</button>
+          <button type="submit" class="btn btn-primary" style="flex: 2;">Pubblica Richiesta Cambio</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: PRENDI TURNO (COLLEGHI) -->
+  <div id="modal-sub-take" class="modal-overlay">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <h3 class="modal-title">🙋‍♂️ Accetta Sostituzione</h3>
+        <button type="button" class="close-btn" data-close="modal-sub-take">&times;</button>
+      </div>
+      <form id="form-sub-take">
+        <input type="hidden" id="take-shift-id" value="">
+        <div id="take-shift-details" class="shift-details-box" style="background: var(--surface-alt); padding: 12px; border-radius: 8px; margin-bottom: 14px; font-size: 13px;"></div>
+        <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; padding: 12px 14px; font-size: 13px; color: #047857; margin-bottom: 16px;">
+          Confermando, diventerai il <strong>sostituto ufficiale</strong> per questa lezione al posto di <strong id="take-owner-name"></strong>.
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" class="btn btn-outline" data-close="modal-sub-take" style="flex: 1;">Annulla</button>
+          <button type="submit" class="btn btn-success" style="flex: 2;">✓ Prendo io il turno</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: GESTIONE / ASSEGNAZIONE SOSTITUTO (COORDINATORE O TITOLARE) -->
+  <div id="modal-substitute" class="modal-overlay">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <h3 class="modal-title">🔁 Modifica Sostituzione Turno</h3>
+        <button type="button" class="close-btn" data-close="modal-substitute">&times;</button>
+      </div>
+      <form id="form-substitute">
+        <input type="hidden" id="sub-shift-id" value="">
+        <div id="sub-shift-details" style="background: var(--surface-alt); padding: 12px; border-radius: 8px; margin-bottom: 14px; font-size: 13px;"></div>
+
+        <div class="form-group">
+          <label class="form-label" for="sub-instructor-select">Istruttore Sostituto</label>
+          <select id="sub-instructor-select" class="form-control"></select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="sub-note">Note aggiuntive (opzionale)</label>
+          <input type="text" id="sub-note" class="form-control" placeholder="es. Cambio concordato">
+        </div>
+
+        <div style="display: flex; gap: 8px; margin-top: 16px;">
+          <button type="button" class="btn btn-outline" data-close="modal-substitute" style="flex: 1;">Annulla</button>
+          <button type="button" id="btn-remove-sub" class="btn btn-outline" style="color: var(--danger-text); border-color: var(--danger-border);">Rimuovi Sostituto</button>
+          <button type="submit" class="btn btn-primary" style="flex: 2;">Salva Modifiche</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ACCESSO PROFILO & PIN ISTRUTTORE -->
+  <div id="modal-login" class="modal-overlay">
+    <div class="modal-sheet" style="max-width: 480px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="login-modal-title">👤 Accedi al Tuo Profilo</h3>
+        <button type="button" class="close-btn" data-close="modal-login">&times;</button>
+      </div>
+      
+      <div id="login-step-select" class="login-step">
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px;">
+          Seleziona il tuo nome per entrare con il tuo profilo, firmare i feedback e gestire i tuoi turni:
+        </p>
+        <div id="login-instructors-grid" class="instructors-login-grid"></div>
+      </div>
+
+      <div id="login-step-pin" class="login-step hidden">
+        <button type="button" id="btn-back-to-select" class="btn btn-outline btn-sm" style="margin-bottom: 12px; font-size: 11px;">
+          ← Cambia Istruttore
+        </button>
+        <div class="selected-instructor-banner">
+          <div id="login-avatar" class="mini-avatar" style="width: 36px; height: 36px; font-size: 15px;"></div>
+          <div>
+            <div id="login-instructor-name" style="font-weight: 800; font-size: 15px;"></div>
+            <div id="login-pin-mode-desc" style="font-size: 12px; color: var(--text-muted);"></div>
+          </div>
+        </div>
+
+        <form id="form-login-pin">
+          <input type="hidden" id="login-target-instructor" value="">
+          <div class="form-group" style="margin-top: 14px;">
+            <label class="form-label" id="label-pin-input">PIN Personale (4 cifre)</label>
+            <input type="password" id="input-instructor-pin" class="form-control" maxlength="6" inputmode="numeric" placeholder="••••" required style="font-size: 22px; letter-spacing: 0.35em; text-align: center; font-weight: 800;">
+          </div>
+          <div class="form-group hidden" id="group-confirm-pin">
+            <label class="form-label">Conferma PIN</label>
+            <input type="password" id="input-confirm-pin" class="form-control" maxlength="6" inputmode="numeric" placeholder="••••" style="font-size: 22px; letter-spacing: 0.35em; text-align: center; font-weight: 800;">
+          </div>
+          <div id="login-error-msg" style="color: var(--danger-text); font-size: 12px; margin-bottom: 10px; display: none;"></div>
+          <button type="submit" id="btn-submit-pin" class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 14px;">
+            Entra nel Profilo
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 5: IMPOSTAZIONI & COORDINATORE -->
+  <div id="modal-settings" class="modal-overlay">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <h3 class="modal-title">⚙️ Impostazioni Profilo</h3>
+        <button type="button" class="close-btn" data-close="modal-settings">&times;</button>
+      </div>
+
+      <!-- PROFILO CORRENTE -->
+      <div style="background: var(--surface-alt); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px; margin-bottom: 18px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div id="settings-user-avatar" class="mini-avatar" style="width: 34px; height: 34px; font-size: 15px;">👤</div>
+            <div>
+              <div id="settings-user-name" style="font-weight: 800; font-size: 15px;">Istruttore</div>
+              <div id="settings-user-role" style="font-size: 12px; color: var(--text-muted);">Profilo Attivo</div>
+            </div>
+          </div>
+          <button type="button" id="btn-logout" class="btn btn-outline btn-sm" style="font-size: 11px;">
+            Cambia Profilo
+          </button>
+        </div>
+        <div style="margin-top: 10px; border-top: 1px solid var(--border); padding-top: 10px; display: flex; gap: 8px;">
+          <button type="button" id="btn-change-pin" class="btn btn-outline btn-sm" style="font-size: 11px; flex: 1;">
+            🔑 Modifica il mio PIN
+          </button>
+        </div>
+      </div>
+
+      <!-- SEZIONE COORDINATORE (RISERVATA ESCLUSIVAMENTE A LUCA) -->
+      <div id="section-coordinator-wrap" style="margin-bottom: 18px; display: none;">
+        <label class="form-label">👑 Ruolo Coordinatore (Riservato a Luca)</label>
+        <div style="display: flex; gap: 8px;">
+          <input type="password" id="input-coord-pin" class="form-control" placeholder="Inserisci PIN (4 cifre)" maxlength="8">
+          <button type="button" id="btn-unlock-coord" class="btn btn-outline">Attiva</button>
+        </div>
+        <p id="coord-status-desc" style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">
+          Permette di pubblicare comunicazioni ufficiali e gestire il planning turni.
+        </p>
+
+        <!-- RESET PIN COLLEGA (SOLO SE COORDINATORE ATTIVO) -->
+        <div id="coord-reset-pin-panel" class="hidden" style="margin-top: 14px; background: #fffbeb; border: 1px solid #fef3c7; border-radius: 8px; padding: 12px;">
+          <div style="font-weight: 800; font-size: 12px; color: #92400e; margin-bottom: 6px;">👑 Gestione PIN Istruttori</div>
+          <p style="font-size: 11px; color: #b45309; margin-bottom: 8px;">
+            Se un collega ha dimenticato il suo PIN, selezionalo qui sotto per azzerarlo. Potrà sceglierne uno nuovo al suo prossimo accesso.
+          </p>
+          <div style="display: flex; gap: 8px;">
+            <select id="select-reset-instructor" class="form-control" style="font-size: 12px;"></select>
+            <button type="button" id="btn-reset-instructor-pin" class="btn btn-outline btn-sm" style="white-space: nowrap; font-size: 11px; color: var(--danger-text);">
+              Azzera PIN
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <hr style="border: none; border-top: 1px solid var(--border); margin: 18px 0;">
+
+      <!-- COLLEGAMENTO GOOGLE SHEET -->
+      <div class="form-group">
+        <label class="form-label" for="setting-api-url">URL Web App Google Sheets</label>
+        <input type="url" id="setting-api-url" class="form-control" placeholder="https://script.google.com/macros/s/.../exec">
+        <span style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 4px;">
+          Incolla qui l'URL dell'applicazione web distribuita con Google Apps Script per la sincronizzazione cloud live.
+        </span>
+      </div>
+
+      <div style="display: flex; gap: 8px; margin-top: 20px;">
+        <button type="button" class="btn btn-outline" data-close="modal-settings" style="flex: 1;">Chiudi</button>
+        <button type="button" id="btn-save-settings" class="btn btn-primary" style="flex: 2;">Salva Impostazioni</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICHE -->
+  <div id="toast" class="toast">
+    <span id="toast-icon">✓</span>
+    <span id="toast-msg">Operazione completata</span>
+  </div>
+
+  <!-- SCRIPT APPLICATIVO -->
+  <script src="app.js?v=20261123_secure_v4"></script>
+</body>
+
+</html>
