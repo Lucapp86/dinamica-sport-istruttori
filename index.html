@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20261124_add_giulia">
+  <link rel="stylesheet" href="styles.css?v=20261124_week_planning">
 </head>
 
 <body>
@@ -109,20 +109,31 @@
     <section id="tab-turni" class="tab-content hidden">
       <div class="section-header">
         <div>
-          <div class="section-pill-tag">📅 Calendario Settimanale</div>
+          <div class="section-pill-tag">📅 Calendario 15 Giorni</div>
           <h2 class="section-title">Planning Vasca & Turni</h2>
-          <p class="section-subtitle">Turni vasca, corsie assegnate e gestione sostituzioni</p>
+          <p class="section-subtitle">Turni vasca, corsie assegnate e sostituzioni temporanee datate</p>
         </div>
       </div>
 
-      <!-- SELETTORE GIORNI -->
-      <div class="days-pills" id="days-pills-bar">
-        <button type="button" class="day-pill active" data-day="Lunedì">Lunedì</button>
-        <button type="button" class="day-pill" data-day="Martedì">Martedì</button>
-        <button type="button" class="day-pill" data-day="Mercoledì">Mercoledì</button>
-        <button type="button" class="day-pill" data-day="Giovedì">Giovedì</button>
-        <button type="button" class="day-pill" data-day="Venerdì">Venerdì</button>
-        <button type="button" class="day-pill" data-day="Sabato">Sabato</button>
+      <!-- SELETTORE SETTIMANA (QUESTA / PROSSIMA) -->
+      <div class="week-selector-bar" id="week-selector-bar">
+        <button type="button" class="week-btn active" id="btn-week-curr" data-week-offset="0">
+          🗓️ Questa Settimana (<span id="label-curr-week-dates">...</span>)
+        </button>
+        <button type="button" class="week-btn" id="btn-week-next" data-week-offset="1">
+          ➡️ Prossima Settimana (<span id="label-next-week-dates">...</span>)
+        </button>
+      </div>
+
+      <!-- SELETTORE GIORNI (DINAMICO CON DATE E BADGE OGGI) -->
+      <div class="days-pills" id="days-pills-bar"></div>
+
+      <!-- INTESTAZIONE GIORNO ATTIVO -->
+      <div id="active-day-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; background: var(--surface); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border);">
+        <div style="font-weight: 800; font-size: 13px; color: var(--primary); display: flex; align-items: center; gap: 6px;">
+          <span>📅</span> <span id="active-day-long-label">Lunedì 24 Novembre</span>
+        </div>
+        <div id="active-day-tag" style="font-size: 11px; font-weight: 700; color: var(--text-muted);"></div>
       </div>
 
       <!-- FILTRO ISTRUTTORE -->
@@ -524,6 +535,7 @@
       </div>
       <form id="form-sub-request">
         <input type="hidden" id="req-shift-id" value="">
+        <input type="hidden" id="req-shift-date" value="">
         <div id="req-shift-details" class="shift-details-box" style="background: var(--surface-alt); padding: 12px; border-radius: 8px; margin-bottom: 14px; font-size: 13px;"></div>
         <div class="form-group">
           <label class="form-label" for="req-sub-note">Motivo del cambio (opzionale)</label>
@@ -549,6 +561,7 @@
       </div>
       <form id="form-sub-take">
         <input type="hidden" id="take-shift-id" value="">
+        <input type="hidden" id="take-shift-date" value="">
         <div id="take-shift-details" class="shift-details-box" style="background: var(--surface-alt); padding: 12px; border-radius: 8px; margin-bottom: 14px; font-size: 13px;"></div>
         <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; padding: 12px 14px; font-size: 13px; color: #047857; margin-bottom: 16px;">
           Confermando, diventerai il <strong>sostituto ufficiale</strong> per questa lezione al posto di <strong id="take-owner-name"></strong>.
@@ -570,6 +583,7 @@
       </div>
       <form id="form-substitute">
         <input type="hidden" id="sub-shift-id" value="">
+        <input type="hidden" id="sub-shift-date" value="">
         <div id="sub-shift-details" style="background: var(--surface-alt); padding: 12px; border-radius: 8px; margin-bottom: 14px; font-size: 13px;"></div>
 
         <div class="form-group">
@@ -697,7 +711,7 @@
   </div>
 
   <!-- SCRIPT APPLICATIVO -->
-  <script src="app.js?v=20261124_add_giulia"></script>
+  <script src="app.js?v=20261124_week_planning"></script>
 </body>
 
 </html>

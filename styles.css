@@ -642,12 +642,53 @@ body {
 /* ========================================================================= */
 /* SEZIONE PLANNING TURNI ELEGANTE                                           */
 /* ========================================================================= */
+.week-selector-bar {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 12px;
+  background: var(--surface-alt);
+  padding: 4px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+}
+
+.week-btn {
+  border: none;
+  background: transparent;
+  padding: 9px 12px;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.18s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.week-btn:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.week-btn.active {
+  background: var(--surface);
+  color: var(--primary);
+  font-weight: 800;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
 .days-pills {
   display: flex;
   gap: 8px;
   overflow-x: auto;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
   scrollbar-width: none;
+  padding-bottom: 2px;
 }
 .days-pills::-webkit-scrollbar {
   display: none;
@@ -655,18 +696,46 @@ body {
 
 .day-pill {
   flex: 1;
-  min-width: 95px;
+  min-width: 80px;
   text-align: center;
-  padding: 10px 8px;
+  padding: 8px 6px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   font-family: inherit;
-  font-size: 13px;
-  font-weight: 800;
   cursor: pointer;
   transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
   color: var(--text-muted);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.day-pill-name {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+}
+
+.day-pill-date {
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+.day-pill-today {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: #fef08a;
+  color: #854d0e;
+  line-height: 1.2;
+  margin-top: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .day-pill:hover {
@@ -680,6 +749,11 @@ body {
   color: #ffffff;
   border-color: #0284c7;
   box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+}
+
+.day-pill.active .day-pill-today {
+  background: rgba(255, 255, 255, 0.28);
+  color: #ffffff;
 }
 
 .shift-card {

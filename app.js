@@ -62,10 +62,13 @@
     news: [],
     turni: [],
     brevetti: [],
+    sostituzioni: [],
     activeTab: 'tab-feedback',
     feedbackFilter: 'all',
     feedbackSearch: '',
+    selectedWeekOffset: 0,
     selectedDay: 'Lunedì',
+    selectedDate: '',
     selectedShiftInstructor: 'all',
     selectedBrevetto: 'all',
     brevettoSearch: '',
@@ -262,6 +265,144 @@
   }
 
   // =========================================================================
+  // CALENDARIO A 15 GIORNI (DUE SETTIMANE & SOSTITUZIONI DATATE)
+  // =========================================================================
+  const DAYS_ORDER = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'];
+  const MONTHS_LONG = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'];
+  const MONTHS_SHORT = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
+
+  function getLocalIsoDate(d = new Date()) {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  function getMonday(date = new Date()) {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    d.setDate(diff);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+
+  function getWeekRangeInfo(offsetWeeks = 0) {
+    const monday = getMonday(new Date());
+    monday.setDate(monday.getDate() + offsetWeeks * 7);
+
+    const saturday = new Date(monday);
+    saturday.setDate(saturday.getDate() + 5);
+
+    const todayIso = getLocalIsoDate(new Date());
+    const days = [];
+
+    for (let i = 0; i < 6; i++) {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      const iso = getLocalIsoDate(d);
+      const dayNum = d.getDate();
+      const monthShort = MONTHS_SHORT[d.getMonth()];
+      const monthLong = MONTHS_LONG[d.getMonth()];
+      days.push({
+        dayName: DAYS_ORDER[i],
+        shortName: DAYS_ORDER[i].slice(0, 3),
+        dateStr: iso,
+        displayDate: `${dayNum} ${monthShort}`,
+        longLabel: `${DAYS_ORDER[i]} ${dayNum} ${monthLong} ${d.getFullYear()}`,
+        isToday: iso === todayIso
+      });
+    }
+
+    const startLabel = `${monday.getDate()} ${MONTHS_SHORT[monday.getMonth()]}`;
+    const endLabel = `${saturday.getDate()} ${MONTHS_SHORT[saturday.getMonth()]}`;
+
+    return {
+      monday,
+      saturday,
+      days,
+      rangeLabel: `${startLabel} - ${endLabel}`
+    };
+  }
+
+  function formatItalianDateLong(isoStr) {
+    if (!isoStr) return '';
+    const parts = isoStr.split('-');
+    if (parts.length !== 3) return isoStr;
+    const y = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10) - 1;
+    const d = parseInt(parts[2], 10);
+    const dateObj = new Date(y, m, d);
+    const dayIdx = dateObj.getDay();
+    const dayName = dayIdx === 0 ? 'Domenica' : DAYS_ORDER[dayIdx - 1];
+    return `${dayName} ${d} ${MONTHS_LONG[m]} ${y}`;
+  }
+
+  function initPlanningDateState() {
+    const currWeek = getWeekRangeInfo(0);
+    const todayIso = getLocalIsoDate(new Date());
+    const todayObj = currWeek.days.find(d => d.dateStr === todayIso);
+
+    state.selectedWeekOffset = 0;
+    if (todayObj) {
+      state.selectedDay = todayObj.dayName;
+      state.selectedDate = todayObj.dateStr;
+    } else {
+      state.selectedDay = 'Lunedì';
+      state.selectedDate = currWeek.days[0].dateStr;
+    }
+  }
+
+  function updateWeekAndDaysUI() {
+    const currWeek = getWeekRangeInfo(0);
+    const nextWeek = getWeekRangeInfo(1);
+
+    const currLabelEl = document.getElementById('label-curr-week-dates');
+    if (currLabelEl) currLabelEl.textContent = currWeek.rangeLabel;
+    const nextLabelEl = document.getElementById('label-next-week-dates');
+    if (nextLabelEl) nextLabelEl.textContent = nextWeek.rangeLabel;
+
+    const btnCurr = document.getElementById('btn-week-curr');
+    if (btnCurr) btnCurr.classList.toggle('active', state.selectedWeekOffset === 0);
+    const btnNext = document.getElementById('btn-week-next');
+    if (btnNext) btnNext.classList.toggle('active', state.selectedWeekOffset === 1);
+
+    const activeWeekInfo = state.selectedWeekOffset === 0 ? currWeek : nextWeek;
+
+    const dayMatch = activeWeekInfo.days.find(d => d.dayName === state.selectedDay);
+    if (dayMatch) {
+      state.selectedDate = dayMatch.dateStr;
+    } else {
+      state.selectedDay = activeWeekInfo.days[0].dayName;
+      state.selectedDate = activeWeekInfo.days[0].dateStr;
+    }
+
+    const pillsContainer = document.getElementById('days-pills-bar');
+    if (pillsContainer) {
+      pillsContainer.innerHTML = activeWeekInfo.days.map(d => `
+        <button type="button" class="day-pill ${d.dayName === state.selectedDay ? 'active' : ''}" data-day="${d.dayName}" data-date="${d.dateStr}">
+          <span class="day-pill-name">${escapeHtml(d.shortName)}</span>
+          <span class="day-pill-date">${escapeHtml(d.displayDate)}</span>
+          ${d.isToday ? '<span class="day-pill-today">Oggi</span>' : ''}
+        </button>
+      `).join('');
+    }
+
+    const currentDayObj = activeWeekInfo.days.find(d => d.dateStr === state.selectedDate) || activeWeekInfo.days[0];
+    const longLabelEl = document.getElementById('active-day-long-label');
+    if (longLabelEl) longLabelEl.textContent = currentDayObj.longLabel;
+
+    const tagEl = document.getElementById('active-day-tag');
+    if (tagEl) {
+      if (currentDayObj.isToday) {
+        tagEl.innerHTML = '<span style="color: #047857; font-weight: 800;">🌟 OGGI</span>';
+      } else {
+        tagEl.textContent = state.selectedWeekOffset === 0 ? 'Questa Settimana' : 'Prossima Settimana';
+      }
+    }
+  }
+
+  // =========================================================================
   // INIZIALIZZAZIONE APPLICAZIONE
   // =========================================================================
   async function initApp() {
@@ -272,6 +413,7 @@
     populateSelectOptions();
     initBrevettiSubtabs();
     initEvaluationForm();
+    initPlanningDateState();
     updateUserView();
     renderAll();
 
@@ -365,6 +507,9 @@
 
       const storedBr = localStorage.getItem('dinamica_brevetti_v2');
       state.brevetti = storedBr ? JSON.parse(storedBr) : [...DEFAULT_DATA.brevetti];
+
+      const storedSost = localStorage.getItem('dinamica_sostituzioni');
+      state.sostituzioni = storedSost ? JSON.parse(storedSost) : [];
     } catch (e) {
       console.warn('Errore lettura localStorage, uso dati default:', e);
       state.feedbacks = [];
@@ -407,6 +552,7 @@
       localStorage.setItem('dinamica_brevetti_v2', JSON.stringify(state.brevetti));
       localStorage.setItem('dinamica_profiles', JSON.stringify(state.profiles));
       localStorage.setItem('dinamica_valutazioni', JSON.stringify(state.valutazioni));
+      localStorage.setItem('dinamica_sostituzioni', JSON.stringify(state.sostituzioni));
     } catch (e) {
       console.error('Errore scrittura localStorage:', e);
     }
@@ -514,6 +660,9 @@
         }
         if (Array.isArray(data.valutazioni)) {
           state.valutazioni = data.valutazioni;
+        }
+        if (Array.isArray(data.sostituzioni)) {
+          state.sostituzioni = data.sostituzioni;
         }
 
         saveLocalData();
@@ -843,20 +992,28 @@
     const container = document.getElementById('turni-list');
     if (!container) return;
 
+    updateWeekAndDaysUI();
+
     let list = state.turni.filter(t => t.day === state.selectedDay);
 
     if (state.selectedShiftInstructor !== 'all') {
-      list = list.filter(t =>
-        (t.instructor || '').toLowerCase() === state.selectedShiftInstructor.toLowerCase() ||
-        (t.substitute || '').toLowerCase() === state.selectedShiftInstructor.toLowerCase()
-      );
+      list = list.filter(t => {
+        const sub = (state.sostituzioni || []).find(s => s.turnoId === t.id && s.date === state.selectedDate);
+        const subName = sub ? (sub.substitute || '') : '';
+        return (t.instructor || '').toLowerCase() === state.selectedShiftInstructor.toLowerCase() ||
+               subName.toLowerCase() === state.selectedShiftInstructor.toLowerCase();
+      });
     }
+
+    const activeWeekInfo = state.selectedWeekOffset === 0 ? getWeekRangeInfo(0) : getWeekRangeInfo(1);
+    const activeDayObj = activeWeekInfo.days.find(d => d.dateStr === state.selectedDate) || activeWeekInfo.days[0];
+    const dateDisplayLabel = activeDayObj ? activeDayObj.displayDate : state.selectedDate;
 
     if (list.length === 0) {
       container.innerHTML = `
         <div class="empty-state">
           <div class="empty-icon">📅</div>
-          <div class="empty-title">Nessun turno programmato per ${escapeHtml(state.selectedDay)}</div>
+          <div class="empty-title">Nessun turno per ${escapeHtml(state.selectedDay)} ${escapeHtml(dateDisplayLabel)}</div>
           <div class="empty-desc">Nessuna corsia o corso presente per questo giorno con i filtri attivi.</div>
         </div>
       `;
@@ -866,62 +1023,64 @@
     const currentUserName = (state.user.name || '').trim().toLowerCase();
 
     container.innerHTML = list.map(item => {
-      const subVal = (item.substitute || '').trim();
-      const isPending = subVal.toUpperCase() === 'CERCASI';
-      const hasSub = Boolean(subVal && !isPending);
+      const sub = (state.sostituzioni || []).find(s => s.turnoId === item.id && s.date === state.selectedDate);
+      const subVal = sub ? (sub.substitute || '').trim() : '';
+      const isPending = Boolean(sub && (sub.status === 'in_attesa' || subVal.toUpperCase() === 'CERCASI'));
+      const hasSub = Boolean(sub && subVal && !isPending);
+      const effectiveNotes = (sub && sub.notes) ? sub.notes : (item.notes || '');
+
       const isOwner = currentUserName !== '' && (item.instructor || '').trim().toLowerCase() === currentUserName;
       const isSubMe = currentUserName !== '' && subVal.toLowerCase() === currentUserName;
       const laneMeta = getLaneMeta(item.laneGroup);
       const instColor = getInstructorColor(item.instructor);
-      const subColor = hasSub ? getInstructorColor(item.substitute) : '';
+      const subColor = hasSub ? getInstructorColor(subVal) : '';
       const initial = (item.instructor || 'S').charAt(0).toUpperCase();
-      const subInitial = hasSub ? item.substitute.charAt(0).toUpperCase() : '';
+      const subInitial = hasSub ? subVal.charAt(0).toUpperCase() : '';
 
       let subActionBtnHtml = '';
 
       if (isPending) {
-        // Turno in attesa di sostituto
+        // Turno con richiesta di sostituzione aperta per questa data
         if (isOwner) {
           subActionBtnHtml = `
-            <button type="button" class="btn btn-outline btn-sm btn-cancel-sub-req" data-id="${item.id}" style="color: var(--danger-text); border-color: var(--danger-border); font-size: 11px;">
+            <button type="button" class="btn btn-outline btn-sm btn-cancel-sub-req" data-id="${item.id}" data-date="${state.selectedDate}" style="color: var(--danger-text); border-color: var(--danger-border); font-size: 11px;">
               ❌ Annulla Richiesta
             </button>
           `;
         } else {
-          // Un collega può prenderlo con 1 tocco
           subActionBtnHtml = `
-            <button type="button" class="btn btn-success btn-sm btn-take-shift" data-id="${item.id}" style="font-size: 11px; font-weight: 800;">
-              🙋‍♂️ Prendo io il turno
+            <button type="button" class="btn btn-success btn-sm btn-take-shift" data-id="${item.id}" data-date="${state.selectedDate}" style="font-size: 11px; font-weight: 800;">
+              🙋‍♂️ Prendo io il turno (${escapeHtml(dateDisplayLabel)})
             </button>
           `;
         }
         if (state.user.isCoordinator) {
           subActionBtnHtml += `
-            <button type="button" class="btn btn-outline btn-sm btn-manage-sub" data-id="${item.id}" style="margin-top: 4px; font-size: 10px;">
+            <button type="button" class="btn btn-outline btn-sm btn-manage-sub" data-id="${item.id}" data-date="${state.selectedDate}" style="margin-top: 4px; font-size: 10px;">
               👑 Gestisci
             </button>
           `;
         }
       } else if (hasSub) {
-        // Turno già sostituito
+        // Turno già sostituito per questa data
         if (isOwner || isSubMe || state.user.isCoordinator) {
           subActionBtnHtml = `
-            <button type="button" class="btn btn-outline btn-sm btn-manage-sub" data-id="${item.id}" style="margin-top: 4px; font-size: 11px;">
+            <button type="button" class="btn btn-outline btn-sm btn-manage-sub" data-id="${item.id}" data-date="${state.selectedDate}" style="margin-top: 4px; font-size: 11px;">
               Modifica Sostituto
             </button>
           `;
         }
       } else {
-        // Nessun sostituto richiesto finora
+        // Nessuna sostituzione: turno normale con istruttore titolare
         if (isOwner) {
           subActionBtnHtml = `
-            <button type="button" class="btn btn-outline btn-sm btn-request-sub" data-id="${item.id}" style="margin-top: 4px; font-size: 11px; font-weight: 700;">
-              🔁 Chiedi Cambio
+            <button type="button" class="btn btn-outline btn-sm btn-request-sub" data-id="${item.id}" data-date="${state.selectedDate}" style="margin-top: 4px; font-size: 11px; font-weight: 700;">
+              🔁 Chiedi Cambio (${escapeHtml(dateDisplayLabel)})
             </button>
           `;
         } else if (state.user.isCoordinator) {
           subActionBtnHtml = `
-            <button type="button" class="btn btn-outline btn-sm btn-manage-sub" data-id="${item.id}" style="margin-top: 4px; font-size: 11px;">
+            <button type="button" class="btn btn-outline btn-sm btn-manage-sub" data-id="${item.id}" data-date="${state.selectedDate}" style="margin-top: 4px; font-size: 11px;">
               👑 Assegna Sostituto
             </button>
           `;
@@ -929,11 +1088,11 @@
       }
 
       return `
-        <div class="shift-card ${laneMeta.cls}" data-id="${item.id}">
+        <div class="shift-card ${laneMeta.cls}" data-id="${item.id}" data-date="${state.selectedDate}">
           <div class="shift-info">
             <span class="shift-time-pill">⏰ ${escapeHtml(item.time || '')}</span>
             <span class="shift-lane">${laneMeta.icon} ${escapeHtml(item.laneGroup || '')}</span>
-            ${item.notes ? `<span class="shift-notes">ℹ️ ${escapeHtml(item.notes)}</span>` : ''}
+            ${effectiveNotes ? `<span class="shift-notes">ℹ️ ${escapeHtml(effectiveNotes)}</span>` : ''}
           </div>
           <div class="shift-person">
             <span class="instructor-badge">
@@ -941,12 +1100,12 @@
               ${escapeHtml(item.instructor || 'Staff')}
             </span>
             ${isPending ? `
-              <span class="badge-pending-sub">🟡 CERCASI SOSTITUTO</span>
+              <span class="badge-pending-sub">🟡 CERCASI SOSTITUTO (${escapeHtml(dateDisplayLabel)})</span>
             ` : ''}
             ${hasSub ? `
               <span class="substitute-badge">
                 <span class="mini-avatar" style="background: ${subColor}; width:16px; height:16px; font-size:9px;">${subInitial}</span>
-                🔁 Sostituito da: <strong>${escapeHtml(item.substitute)}</strong>
+                🔁 Sostituito da: <strong>${escapeHtml(subVal)}</strong> (${escapeHtml(dateDisplayLabel)})
               </span>
             ` : ''}
             ${subActionBtnHtml}
@@ -1514,14 +1673,22 @@
       });
     }
 
-    // 3. Selettore Giorni Planning
-    document.querySelectorAll('.day-pill[data-day]').forEach(pill => {
-      pill.addEventListener('click', () => {
-        document.querySelectorAll('.day-pill[data-day]').forEach(p => p.classList.remove('active'));
-        pill.classList.add('active');
-        state.selectedDay = pill.getAttribute('data-day');
+    // 3. Selettore Settimana e Giorni Planning
+    document.getElementById('week-selector-bar')?.addEventListener('click', (e) => {
+      const btn = e.target.closest('.week-btn');
+      if (btn) {
+        state.selectedWeekOffset = parseInt(btn.getAttribute('data-week-offset') || '0', 10);
         renderTurni();
-      });
+      }
+    });
+
+    document.getElementById('days-pills-bar')?.addEventListener('click', (e) => {
+      const pill = e.target.closest('.day-pill');
+      if (pill) {
+        state.selectedDay = pill.getAttribute('data-day');
+        state.selectedDate = pill.getAttribute('data-date');
+        renderTurni();
+      }
     });
 
     const shiftInstrSelect = document.getElementById('filter-shift-instructor');
@@ -1748,29 +1915,29 @@
       }
     });
 
-    // 13. Gestione e Richieste Sostituzione Turno
+    // 13. Gestione e Richieste Sostituzione Turno (Datata)
     document.getElementById('turni-list')?.addEventListener('click', (e) => {
       const reqBtn = e.target.closest('.btn-request-sub');
       if (reqBtn) {
-        openSubRequestModal(reqBtn.getAttribute('data-id'));
+        openSubRequestModal(reqBtn.getAttribute('data-id'), reqBtn.getAttribute('data-date'));
         return;
       }
 
       const cancelBtn = e.target.closest('.btn-cancel-sub-req');
       if (cancelBtn) {
-        cancelSubRequest(cancelBtn.getAttribute('data-id'));
+        cancelSubRequest(cancelBtn.getAttribute('data-id'), cancelBtn.getAttribute('data-date'));
         return;
       }
 
       const takeBtn = e.target.closest('.btn-take-shift');
       if (takeBtn) {
-        openSubTakeModal(takeBtn.getAttribute('data-id'));
+        openSubTakeModal(takeBtn.getAttribute('data-id'), takeBtn.getAttribute('data-date'));
         return;
       }
 
       const manageBtn = e.target.closest('.btn-manage-sub');
       if (manageBtn) {
-        openSubstituteModal(manageBtn.getAttribute('data-id'));
+        openSubstituteModal(manageBtn.getAttribute('data-id'), manageBtn.getAttribute('data-date'));
         return;
       }
     });
@@ -1779,26 +1946,36 @@
     document.getElementById('form-sub-request')?.addEventListener('submit', (e) => {
       e.preventDefault();
       const shiftId = document.getElementById('req-shift-id').value;
+      const shiftDate = document.getElementById('req-shift-date').value || state.selectedDate;
       const note = document.getElementById('req-sub-note').value.trim();
       const shift = state.turni.find(t => t.id === shiftId);
-      if (shift) {
-        shift.substitute = 'CERCASI';
-        shift.notes = note ? 'Cercasi cambio: ' + note : 'Cercasi cambio';
-        saveLocalData();
-        renderTurni();
-        closeModal('modal-sub-request');
-        showToast('✓ Richiesta cambio turno pubblicata per tutti i colleghi!');
-
-        postToGoogleSheets({
-          action: 'update_turno',
-          id: shift.id,
+      if (shift && shiftDate) {
+        const existingIdx = (state.sostituzioni || []).findIndex(s => s.turnoId === shiftId && s.date === shiftDate);
+        const subRecord = {
+          id: existingIdx >= 0 ? state.sostituzioni[existingIdx].id : ('sub_' + Date.now()),
+          turnoId: shift.id,
+          date: shiftDate,
           day: shift.day,
           time: shift.time,
           laneGroup: shift.laneGroup,
           instructor: shift.instructor,
           substitute: 'CERCASI',
-          notes: shift.notes
-        });
+          status: 'in_attesa',
+          notes: note ? ('Cercasi cambio: ' + note) : 'Cercasi cambio',
+          updatedAt: new Date().toISOString()
+        };
+
+        if (existingIdx >= 0) {
+          state.sostituzioni[existingIdx] = subRecord;
+        } else {
+          state.sostituzioni.push(subRecord);
+        }
+
+        saveLocalData();
+        renderTurni();
+        closeModal('modal-sub-request');
+        showToast(`✓ Richiesta cambio per ${shift.day} pubblicata!`);
+        postToGoogleSheets({ action: 'save_sostituzione', sostituzione: subRecord });
       }
     });
 
@@ -1806,25 +1983,37 @@
     document.getElementById('form-sub-take')?.addEventListener('submit', (e) => {
       e.preventDefault();
       const shiftId = document.getElementById('take-shift-id').value;
+      const shiftDate = document.getElementById('take-shift-date').value || state.selectedDate;
       const shift = state.turni.find(t => t.id === shiftId);
-      if (shift) {
+      if (shift && shiftDate) {
         const myName = state.user.name || 'Istruttore';
-        shift.substitute = myName;
-        saveLocalData();
-        renderTurni();
-        closeModal('modal-sub-take');
-        showToast(`🎉 Turno preso! Ora sostituisci ufficialmente ${shift.instructor}.`);
-
-        postToGoogleSheets({
-          action: 'update_turno',
-          id: shift.id,
+        const existingIdx = (state.sostituzioni || []).findIndex(s => s.turnoId === shiftId && s.date === shiftDate);
+        const prevNotes = existingIdx >= 0 ? state.sostituzioni[existingIdx].notes : '';
+        const subRecord = {
+          id: existingIdx >= 0 ? state.sostituzioni[existingIdx].id : ('sub_' + Date.now()),
+          turnoId: shift.id,
+          date: shiftDate,
           day: shift.day,
           time: shift.time,
           laneGroup: shift.laneGroup,
           instructor: shift.instructor,
           substitute: myName,
-          notes: shift.notes
-        });
+          status: 'confermato',
+          notes: prevNotes,
+          updatedAt: new Date().toISOString()
+        };
+
+        if (existingIdx >= 0) {
+          state.sostituzioni[existingIdx] = subRecord;
+        } else {
+          state.sostituzioni.push(subRecord);
+        }
+
+        saveLocalData();
+        renderTurni();
+        closeModal('modal-sub-take');
+        showToast(`🎉 Turno preso! Ora sostituisci ${shift.instructor}.`);
+        postToGoogleSheets({ action: 'save_sostituzione', sostituzione: subRecord });
       }
     });
 
@@ -1832,51 +2021,51 @@
     document.getElementById('form-substitute')?.addEventListener('submit', (e) => {
       e.preventDefault();
       const shiftId = document.getElementById('sub-shift-id').value;
+      const shiftDate = document.getElementById('sub-shift-date').value || state.selectedDate;
       const subName = document.getElementById('sub-instructor-select').value;
       const note = document.getElementById('sub-note').value.trim();
 
       const shift = state.turni.find(t => t.id === shiftId);
-      if (shift) {
-        shift.substitute = subName;
-        if (note) shift.notes = note;
-        saveLocalData();
-        renderTurni();
-        closeModal('modal-substitute');
-        showToast(`✓ Sostituzione registrata con ${subName}!`);
-
-        postToGoogleSheets({
-          action: 'update_turno',
-          id: shiftId,
+      if (shift && shiftDate) {
+        const existingIdx = (state.sostituzioni || []).findIndex(s => s.turnoId === shiftId && s.date === shiftDate);
+        const subRecord = {
+          id: existingIdx >= 0 ? state.sostituzioni[existingIdx].id : ('sub_' + Date.now()),
+          turnoId: shift.id,
+          date: shiftDate,
           day: shift.day,
           time: shift.time,
           laneGroup: shift.laneGroup,
           instructor: shift.instructor,
           substitute: subName,
-          notes: shift.notes
-        });
+          status: 'confermato',
+          notes: note,
+          updatedAt: new Date().toISOString()
+        };
+
+        if (existingIdx >= 0) {
+          state.sostituzioni[existingIdx] = subRecord;
+        } else {
+          state.sostituzioni.push(subRecord);
+        }
+
+        saveLocalData();
+        renderTurni();
+        closeModal('modal-substitute');
+        showToast(`✓ Sostituzione registrata con ${subName}!`);
+        postToGoogleSheets({ action: 'save_sostituzione', sostituzione: subRecord });
       }
     });
 
     document.getElementById('btn-remove-sub')?.addEventListener('click', () => {
       const shiftId = document.getElementById('sub-shift-id').value;
-      const shift = state.turni.find(t => t.id === shiftId);
-      if (shift) {
-        shift.substitute = '';
+      const shiftDate = document.getElementById('sub-shift-date').value || state.selectedDate;
+      if (shiftId && shiftDate) {
+        state.sostituzioni = (state.sostituzioni || []).filter(s => !(s.turnoId === shiftId && s.date === shiftDate));
         saveLocalData();
         renderTurni();
         closeModal('modal-substitute');
-        showToast('Sostituzione rimossa.');
-
-        postToGoogleSheets({
-          action: 'update_turno',
-          id: shiftId,
-          day: shift.day,
-          time: shift.time,
-          laneGroup: shift.laneGroup,
-          instructor: shift.instructor,
-          substitute: '',
-          notes: shift.notes
-        });
+        showToast('Sostituzione rimossa per questa data.');
+        postToGoogleSheets({ action: 'delete_sostituzione', turnoId: shiftId, date: shiftDate });
       }
     });
 
@@ -2081,14 +2270,20 @@
     openModal('modal-reply');
   }
 
-  function openSubstituteModal(shiftId) {
+  function openSubstituteModal(shiftId, shiftDate) {
     const shift = state.turni.find(t => t.id === shiftId);
     if (!shift) return;
 
+    const dateToUse = shiftDate || state.selectedDate;
     document.getElementById('sub-shift-id').value = shift.id;
+    document.getElementById('sub-shift-date').value = dateToUse;
+
+    const currentSub = (state.sostituzioni || []).find(s => s.turnoId === shift.id && s.date === dateToUse);
+
     const details = document.getElementById('sub-shift-details');
     if (details) {
       details.innerHTML = `
+        <strong>Data Turno:</strong> ${escapeHtml(formatItalianDateLong(dateToUse))}<br>
         <strong>Turno:</strong> ${escapeHtml(shift.day)} · ${escapeHtml(shift.time)}<br>
         <strong>Corsia:</strong> ${escapeHtml(shift.laneGroup)}<br>
         <strong>Titolare:</strong> ${escapeHtml(shift.instructor)}
@@ -2098,21 +2293,26 @@
     const select = document.getElementById('sub-instructor-select');
     if (select) {
       const others = state.config.instructors.filter(name => name.toLowerCase() !== (shift.instructor || '').toLowerCase());
-      select.innerHTML = others.map(name => `<option value="${escapeHtml(name)}" ${shift.substitute === name ? 'selected' : ''}>${escapeHtml(name)}</option>`).join('');
+      const selectedSubName = currentSub ? currentSub.substitute : '';
+      select.innerHTML = others.map(name => `<option value="${escapeHtml(name)}" ${selectedSubName === name ? 'selected' : ''}>${escapeHtml(name)}</option>`).join('');
     }
 
-    document.getElementById('sub-note').value = shift.notes || '';
+    document.getElementById('sub-note').value = currentSub ? (currentSub.notes || '') : '';
     openModal('modal-substitute');
   }
 
-  function openSubRequestModal(shiftId) {
+  function openSubRequestModal(shiftId, shiftDate) {
     const shift = state.turni.find(t => t.id === shiftId);
     if (!shift) return;
 
+    const dateToUse = shiftDate || state.selectedDate;
     document.getElementById('req-shift-id').value = shift.id;
+    document.getElementById('req-shift-date').value = dateToUse;
+
     const details = document.getElementById('req-shift-details');
     if (details) {
       details.innerHTML = `
+        <strong>Data Turno:</strong> ${escapeHtml(formatItalianDateLong(dateToUse))}<br>
         <strong>Turno:</strong> ${escapeHtml(shift.day)} · ${escapeHtml(shift.time)}<br>
         <strong>Corsia:</strong> ${escapeHtml(shift.laneGroup)}<br>
         <strong>Titolare:</strong> ${escapeHtml(shift.instructor)}
@@ -2122,44 +2322,38 @@
     openModal('modal-sub-request');
   }
 
-  function cancelSubRequest(shiftId) {
+  function cancelSubRequest(shiftId, shiftDate) {
+    const dateToUse = shiftDate || state.selectedDate;
     const shift = state.turni.find(t => t.id === shiftId);
     if (!shift) return;
 
-    if (confirm('Vuoi annullare la richiesta di cambio per questo turno?')) {
-      shift.substitute = '';
-      if (shift.notes && shift.notes.startsWith('Cercasi cambio')) {
-        shift.notes = '';
-      }
+    if (confirm(`Vuoi annullare la richiesta di cambio per ${formatItalianDateLong(dateToUse)}?`)) {
+      state.sostituzioni = (state.sostituzioni || []).filter(s => !(s.turnoId === shiftId && s.date === dateToUse));
       saveLocalData();
       renderTurni();
       showToast('Richiesta cambio annullata.');
-
-      postToGoogleSheets({
-        action: 'update_turno',
-        id: shift.id,
-        day: shift.day,
-        time: shift.time,
-        laneGroup: shift.laneGroup,
-        instructor: shift.instructor,
-        substitute: '',
-        notes: shift.notes
-      });
+      postToGoogleSheets({ action: 'delete_sostituzione', turnoId: shift.id, date: dateToUse });
     }
   }
 
-  function openSubTakeModal(shiftId) {
+  function openSubTakeModal(shiftId, shiftDate) {
     const shift = state.turni.find(t => t.id === shiftId);
     if (!shift) return;
 
+    const dateToUse = shiftDate || state.selectedDate;
     document.getElementById('take-shift-id').value = shift.id;
+    document.getElementById('take-shift-date').value = dateToUse;
+
+    const currentSub = (state.sostituzioni || []).find(s => s.turnoId === shift.id && s.date === dateToUse);
+
     const details = document.getElementById('take-shift-details');
     if (details) {
       details.innerHTML = `
+        <strong>Data Turno:</strong> ${escapeHtml(formatItalianDateLong(dateToUse))}<br>
         <strong>Turno:</strong> ${escapeHtml(shift.day)} · ${escapeHtml(shift.time)}<br>
         <strong>Corsia:</strong> ${escapeHtml(shift.laneGroup)}<br>
         <strong>Titolare da sostituire:</strong> <span style="font-weight: 800; color: #b91c1c;">${escapeHtml(shift.instructor)}</span>
-        ${shift.notes ? `<br><strong>Nota:</strong> <em>${escapeHtml(shift.notes)}</em>` : ''}
+        ${currentSub && currentSub.notes ? `<br><strong>Nota:</strong> <em>${escapeHtml(currentSub.notes)}</em>` : ''}
       `;
     }
     const ownerSpan = document.getElementById('take-owner-name');

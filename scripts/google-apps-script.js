@@ -267,6 +267,16 @@ function setupSheet() {
     sVal.setFrozenRows(1);
   }
 
+  // 7. Scheda SOSTITUZIONI (DATATE)
+  var sSost = ss.getSheetByName('Sostituzioni') || ss.insertSheet('Sostituzioni');
+  if (sSost.getLastRow() === 0) {
+    sSost.appendRow([
+      'Id', 'TurnoId', 'Data', 'Giorno', 'Orario', 'CorsiaGruppo', 'Titolare', 'Sostituto', 'Stato', 'Note', 'DataAggiornamento'
+    ]);
+    sSost.getRange(1, 1, 1, 11).setFontWeight('bold').setBackground('#fef3c7');
+    sSost.setFrozenRows(1);
+  }
+
   // Rimuovi Foglio1 se vuoto
   var defSheet = ss.getSheetByName('Foglio1');
   if (defSheet && defSheet.getLastRow() === 0 && ss.getSheets().length > 1) {
@@ -420,12 +430,38 @@ function doGet(e) {
       }
     }
 
+    // 7. Leggi Sostituzioni datate
+    var sSost = ss.getSheetByName('Sostituzioni');
+    var sostRows = sSost ? sSost.getDataRange().getValues() : [];
+    var sostituzioniList = [];
+    if (sostRows.length > 1) {
+      for (var s = 1; s < sostRows.length; s++) {
+        var rs = sostRows[s];
+        if (!rs[0] && !rs[1]) continue;
+        var sDateStr = rs[2] instanceof Date ? Utilities.formatDate(rs[2], Session.getScriptTimeZone(), 'yyyy-MM-dd') : String(rs[2] || '');
+        sostituzioniList.push({
+          id: String(rs[0] || ('sub_' + s)),
+          turnoId: String(rs[1] || ''),
+          date: sDateStr,
+          day: String(rs[3] || ''),
+          time: String(rs[4] || ''),
+          laneGroup: String(rs[5] || ''),
+          instructor: String(rs[6] || ''),
+          substitute: String(rs[7] || ''),
+          status: String(rs[8] || 'in_attesa'),
+          notes: String(rs[9] || ''),
+          updatedAt: String(rs[10] || '')
+        });
+      }
+    }
+
     var payload = {
       success: true,
       timestamp: new Date().toISOString(),
       feedback: feedbacks.reverse(),
       news: newsList.reverse(),
       turni: turniList,
+      sostituzioni: sostituzioniList,
       brevetti: brevettiList,
       profili: profiliList,
       valutazioni: valutazioniList.reverse()
@@ -705,6 +741,69 @@ function doPost(e) {
             .setMimeType(ContentService.MimeType.JSON);
         }
       }
+    }
+
+    // 10. SALVA / AGGIORNA SOSTITUZIONE DATATA
+    if (action === 'save_sostituzione') {
+      var sSostPost = ss.getSheetByName('Sostituzioni') || ss.insertSheet('Sostituzioni');
+      var subData = data.sostituzione || data;
+      var sId = subData.id || ('sub_' + new Date().getTime());
+      var sTurnoId = String(subData.turnoId || '');
+      var sDate = String(subData.date || '');
+      var sDay = String(subData.day || '');
+      var sTime = String(subData.time || '');
+      var sLane = String(subData.laneGroup || '');
+      var sInstr = String(subData.instructor || '');
+      var sSub = String(subData.substitute || '');
+      var sStatus = String(subData.status || 'in_attesa');
+      var sNotes = String(subData.notes || '');
+      var sNow = new Date().toISOString();
+
+      var sRows = sSostPost.getDataRange().getValues();
+      var foundS = -1;
+      for (var si = 1; si < sRows.length; si++) {
+        var rowTurnoId = String(sRows[si][1] || '');
+        var rowDate = sRows[si][2] instanceof Date ? Utilities.formatDate(sRows[si][2], Session.getScriptTimeZone(), 'yyyy-MM-dd') : String(sRows[si][2] || '');
+        if (String(sRows[si][0]) === String(sId) || (rowTurnoId === sTurnoId && rowDate === sDate)) {
+          foundS = si + 1;
+          break;
+        }
+      }
+
+      if (foundS > 0) {
+        sSostPost.getRange(foundS, 1, 1, 11).setValues([[
+          sId, sTurnoId, sDate, sDay, sTime, sLane, sInstr, sSub, sStatus, sNotes, sNow
+        ]]);
+      } else {
+        sSostPost.appendRow([
+          sId, sTurnoId, sDate, sDay, sTime, sLane, sInstr, sSub, sStatus, sNotes, sNow
+        ]);
+      }
+
+      return ContentService.createTextOutput(JSON.stringify({ success: true, action: 'saved_sostituzione', id: sId }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // 11. ELIMINA SOSTITUZIONE (ANNULLA CAMBIO)
+    if (action === 'delete_sostituzione') {
+      var sSostDel = ss.getSheetByName('Sostituzioni');
+      if (sSostDel) {
+        var delSubId = String(data.id || '');
+        var delTurnoId = String(data.turnoId || '');
+        var delDate = String(data.date || '');
+        var sRowsD = sSostDel.getDataRange().getValues();
+        for (var sd = 1; sd < sRowsD.length; sd++) {
+          var rT = String(sRowsD[sd][1] || '');
+          var rD = sRowsD[sd][2] instanceof Date ? Utilities.formatDate(sRowsD[sd][2], Session.getScriptTimeZone(), 'yyyy-MM-dd') : String(sRowsD[sd][2] || '');
+          if ((delSubId && String(sRowsD[sd][0]) === delSubId) || (delTurnoId && delDate && rT === delTurnoId && rD === delDate)) {
+            sSostDel.deleteRow(sd + 1);
+            return ContentService.createTextOutput(JSON.stringify({ success: true, action: 'deleted_sostituzione' }))
+              .setMimeType(ContentService.MimeType.JSON);
+          }
+        }
+      }
+      return ContentService.createTextOutput(JSON.stringify({ success: false, message: 'Elemento non trovato' }))
+        .setMimeType(ContentService.MimeType.JSON);
     }
 
     return ContentService.createTextOutput(JSON.stringify({ success: false, message: 'Azione non riconosciuta' }))
