@@ -600,6 +600,11 @@
       coordLabel.textContent = (isLuca && state.user.isCoordinator) ? '👑 Coordinatore (Luca)' : '👤 ' + (state.user.name || 'Accedi');
     }
 
+    const settingsBtn = document.getElementById('settings-btn');
+    if (settingsBtn) {
+      settingsBtn.style.display = isLuca ? 'inline-flex' : 'none';
+    }
+
     // Il pulsante per pubblicare comunicazioni in bacheca è visibile ESCLUSIVAMENTE a Luca
     const openNewsBtn = document.getElementById('open-new-news-btn');
     if (openNewsBtn) {
@@ -1616,8 +1621,6 @@
 
     document.getElementById('settings-btn')?.addEventListener('click', () => {
       openModal('modal-settings');
-      document.getElementById('setting-my-name').value = state.user.name;
-      document.getElementById('setting-api-url').value = state.config.apiUrl;
       updateCoordStatusView();
     });
 
@@ -2025,42 +2028,7 @@
       }
     });
 
-    // 16. Impostazioni & Ruolo Coordinatore & Reset PIN (Esclusivo per Luca)
-    document.getElementById('btn-unlock-coord')?.addEventListener('click', async () => {
-      if ((state.user.name || '').toLowerCase() !== 'luca') {
-        alert('Accesso negato: solo il profilo di Luca è autorizzato ad accedere come Coordinatore.');
-        return;
-      }
-      const pin = document.getElementById('input-coord-pin').value.trim();
-      const lucaPin = state.profiles['Luca'] ? state.profiles['Luca'].pin : '';
-      const hashedPin = await hashPin(pin, 'dinamica_coord_salt_');
-      const hashedInstrPin = await hashPin(pin, 'dinamica_instr_salt_');
-      if (hashedPin === state.config.coordinatorPinHash || (lucaPin && (hashedInstrPin === lucaPin || pin === lucaPin))) {
-        state.user.isCoordinator = true;
-        localStorage.setItem('dinamica_is_coordinator', 'true');
-        updateCoordStatusView();
-        updateUserView();
-        renderAll();
-        showToast('👑 Modalità Coordinatore sbloccata!');
-      } else {
-        alert('PIN errato. Inserisci il codice corretto.');
-      }
-    });
-
-    document.getElementById('btn-save-settings')?.addEventListener('click', () => {
-      const newApi = document.getElementById('setting-api-url').value.trim();
-
-      if (newApi && newApi !== state.config.apiUrl) {
-        state.config.apiUrl = newApi;
-        localStorage.setItem('dinamica_api_url', newApi);
-        syncWithGoogleSheets(false);
-      }
-
-      closeModal('modal-settings');
-      renderAll();
-      showToast('Impostazioni salvate.');
-    });
-
+    // 16. Profilo & Reset PIN Colleghi (Coordinatore Luca)
     document.getElementById('btn-logout')?.addEventListener('click', handleLogout);
     document.getElementById('btn-change-pin')?.addEventListener('click', handleChangePin);
     document.getElementById('btn-reset-instructor-pin')?.addEventListener('click', handleResetColleaguePin);
@@ -2432,40 +2400,25 @@
     if (sectionWrap) {
       sectionWrap.style.display = isLuca ? 'block' : 'none';
     }
-    if (!isLuca) {
+    if (isLuca) {
+      state.user.isCoordinator = true;
+      localStorage.setItem('dinamica_is_coordinator', 'true');
+    } else {
       state.user.isCoordinator = false;
       localStorage.setItem('dinamica_is_coordinator', 'false');
-      return;
     }
 
-    const desc = document.getElementById('coord-status-desc');
-    const input = document.getElementById('input-coord-pin');
-    const btn = document.getElementById('btn-unlock-coord');
+    const titleEl = document.getElementById('modal-settings-title');
+    if (titleEl) {
+      titleEl.textContent = isLuca ? '👑 Profilo Coordinatore (Luca)' : '👤 Profilo Istruttore';
+    }
 
-    if (state.user.isCoordinator) {
-      if (desc) desc.innerHTML = '<span style="color: #047857; font-weight: bold;">✓ Modalità Coordinatore ATTIVA</span> (puoi pubblicare avvisi, gestire turni e azzerare PIN colleghi).';
-      if (input) input.style.display = 'none';
-      if (btn) {
-        btn.textContent = 'Disattiva';
-        btn.onclick = () => {
-          state.user.isCoordinator = false;
-          localStorage.setItem('dinamica_is_coordinator', 'false');
-          updateCoordStatusView();
-          updateUserView();
-          renderAll();
-          showToast('Modalità Coordinatore disattivata.');
-        };
-      }
-    } else {
-      if (desc) desc.textContent = 'Permette a Luca di pubblicare comunicazioni e gestire i turni.';
-      if (input) {
-        input.style.display = 'block';
-        input.value = '';
-      }
-      if (btn) {
-        btn.textContent = 'Attiva';
-        btn.onclick = null;
-      }
+    const resetSelect = document.getElementById('select-reset-instructor');
+    if (resetSelect && isLuca) {
+      resetSelect.innerHTML = state.config.instructors
+        .filter(n => n.toLowerCase() !== 'luca')
+        .map(name => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`)
+        .join('');
     }
   }
 

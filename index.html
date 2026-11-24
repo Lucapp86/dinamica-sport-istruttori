@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20261124_news_fix">
+  <link rel="stylesheet" href="styles.css?v=20261124_profile_cleanup">
 </head>
 
 <body>
@@ -637,11 +637,11 @@
     </div>
   </div>
 
-  <!-- MODAL 5: IMPOSTAZIONI & COORDINATORE -->
+  <!-- MODAL 5: PROFILO & COORDINATORE -->
   <div id="modal-settings" class="modal-overlay">
     <div class="modal-sheet">
       <div class="modal-header">
-        <h3 class="modal-title">⚙️ Impostazioni Profilo</h3>
+        <h3 class="modal-title" id="modal-settings-title">👤 Profilo Personale</h3>
         <button type="button" class="close-btn" data-close="modal-settings">&times;</button>
       </div>
 
@@ -649,9 +649,9 @@
       <div style="background: var(--surface-alt); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px; margin-bottom: 18px;">
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
           <div style="display: flex; align-items: center; gap: 10px;">
-            <div id="settings-user-avatar" class="mini-avatar" style="width: 34px; height: 34px; font-size: 15px;">👤</div>
+            <div id="settings-user-avatar" class="mini-avatar" style="width: 36px; height: 36px; font-size: 16px;">👤</div>
             <div>
-              <div id="settings-user-name" style="font-weight: 800; font-size: 15px;">Istruttore</div>
+              <div id="settings-user-name" style="font-weight: 800; font-size: 16px;">Istruttore</div>
               <div id="settings-user-role" style="font-size: 12px; color: var(--text-muted);">Profilo Attivo</div>
             </div>
           </div>
@@ -659,53 +659,33 @@
             Cambia Profilo
           </button>
         </div>
-        <div style="margin-top: 10px; border-top: 1px solid var(--border); padding-top: 10px; display: flex; gap: 8px;">
-          <button type="button" id="btn-change-pin" class="btn btn-outline btn-sm" style="font-size: 11px; flex: 1;">
-            🔑 Modifica il mio PIN
+        <div style="margin-top: 12px; border-top: 1px solid var(--border); padding-top: 10px;">
+          <button type="button" id="btn-change-pin" class="btn btn-outline btn-sm" style="font-size: 12px; width: 100%;">
+            🔑 Modifica il mio PIN personale
           </button>
         </div>
       </div>
 
       <!-- SEZIONE COORDINATORE (RISERVATA ESCLUSIVAMENTE A LUCA) -->
       <div id="section-coordinator-wrap" style="margin-bottom: 18px; display: none;">
-        <label class="form-label">👑 Ruolo Coordinatore (Riservato a Luca)</label>
-        <div style="display: flex; gap: 8px;">
-          <input type="password" id="input-coord-pin" class="form-control" placeholder="Inserisci PIN (4 cifre)" maxlength="8">
-          <button type="button" id="btn-unlock-coord" class="btn btn-outline">Attiva</button>
-        </div>
-        <p id="coord-status-desc" style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">
-          Permette di pubblicare comunicazioni ufficiali e gestire il planning turni.
-        </p>
-
-        <!-- RESET PIN COLLEGA (SOLO SE COORDINATORE ATTIVO) -->
-        <div id="coord-reset-pin-panel" class="hidden" style="margin-top: 14px; background: #fffbeb; border: 1px solid #fef3c7; border-radius: 8px; padding: 12px;">
-          <div style="font-weight: 800; font-size: 12px; color: #92400e; margin-bottom: 6px;">👑 Gestione PIN Istruttori</div>
-          <p style="font-size: 11px; color: #b45309; margin-bottom: 8px;">
-            Se un collega ha dimenticato il suo PIN, selezionalo qui sotto per azzerarlo. Potrà sceglierne uno nuovo al suo prossimo accesso.
+        <div style="background: #fffbeb; border: 1px solid #fef3c7; border-radius: 8px; padding: 14px;">
+          <div style="display: flex; align-items: center; gap: 6px; font-weight: 800; font-size: 13px; color: #92400e; margin-bottom: 6px;">
+            👑 Gestione PIN Istruttori (Coordinatore)
+          </div>
+          <p style="font-size: 11px; color: #b45309; margin-bottom: 10px; line-height: 1.4;">
+            Se un collega ha dimenticato il suo PIN personale, selezionalo qui sotto per azzerarlo. Potrà sceglierne uno nuovo al suo prossimo accesso.
           </p>
           <div style="display: flex; gap: 8px;">
             <select id="select-reset-instructor" class="form-control" style="font-size: 12px;"></select>
-            <button type="button" id="btn-reset-instructor-pin" class="btn btn-outline btn-sm" style="white-space: nowrap; font-size: 11px; color: var(--danger-text);">
+            <button type="button" id="btn-reset-instructor-pin" class="btn btn-outline btn-sm" style="white-space: nowrap; font-size: 11px; color: var(--danger-text); background: white;">
               Azzera PIN
             </button>
           </div>
         </div>
       </div>
 
-      <hr style="border: none; border-top: 1px solid var(--border); margin: 18px 0;">
-
-      <!-- COLLEGAMENTO GOOGLE SHEET -->
-      <div class="form-group">
-        <label class="form-label" for="setting-api-url">URL Web App Google Sheets</label>
-        <input type="url" id="setting-api-url" class="form-control" placeholder="https://script.google.com/macros/s/.../exec">
-        <span style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 4px;">
-          Incolla qui l'URL dell'applicazione web distribuita con Google Apps Script per la sincronizzazione cloud live.
-        </span>
-      </div>
-
-      <div style="display: flex; gap: 8px; margin-top: 20px;">
-        <button type="button" class="btn btn-outline" data-close="modal-settings" style="flex: 1;">Chiudi</button>
-        <button type="button" id="btn-save-settings" class="btn btn-primary" style="flex: 2;">Salva Impostazioni</button>
+      <div style="margin-top: 18px;">
+        <button type="button" class="btn btn-primary" data-close="modal-settings" style="width: 100%;">Chiudi</button>
       </div>
     </div>
   </div>
@@ -717,7 +697,7 @@
   </div>
 
   <!-- SCRIPT APPLICATIVO -->
-  <script src="app.js?v=20261124_news_fix"></script>
+  <script src="app.js?v=20261124_profile_cleanup"></script>
 </body>
 
 </html>
