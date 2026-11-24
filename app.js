@@ -17,7 +17,7 @@
       apiUrl: 'https://script.google.com/macros/s/AKfycbyoMPGp7PUtlbDRmU5M0fVcKGrUYgc6A8wYYmzpxAD3HODUdEBvwEuaDUtnJyfw-con/exec',
       syncIntervalSeconds: 20,
       instructors: [
-        'Luca', 'Riccardo', 'Mariagiulia', 'Elisa', 'Agata', 'Carlo', 'Sara', 'Noemi', 'Sofia', 'Laura'
+        'Luca', 'Riccardo', 'Mariagiulia', 'Elisa', 'Agata', 'Carlo', 'Sara', 'Noemi', 'Sofia', 'Laura', 'Giulia'
       ],
       groups: [
         'Tartarughe Marine',
@@ -717,6 +717,7 @@
     if (n.startsWith('noemi')) return 'linear-gradient(135deg, #6366f1, #4f46e5)';
     if (n.startsWith('sofia')) return 'linear-gradient(135deg, #db2777, #be185d)';
     if (n.startsWith('laura')) return 'linear-gradient(135deg, #9333ea, #7e22ce)';
+    if (n.startsWith('giulia')) return 'linear-gradient(135deg, #06b6d4, #0891b2)';
     return 'linear-gradient(135deg, #0284c7, #0369a1)';
   }
 
