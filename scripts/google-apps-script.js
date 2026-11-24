@@ -586,6 +586,22 @@ function doPost(e) {
         .setMimeType(ContentService.MimeType.JSON);
     }
 
+    // 4b. ELIMINA NEWS (COORDINATORE)
+    if (action === 'delete_news') {
+      var sNwDel = ss.getSheetByName('News');
+      var delNwId = data.id;
+      var rowsNwD = sNwDel.getDataRange().getValues();
+      for (var nd = 1; nd < rowsNwD.length; nd++) {
+        if (String(rowsNwD[nd][0]) === String(delNwId)) {
+          sNwDel.deleteRow(nd + 1);
+          return ContentService.createTextOutput(JSON.stringify({ success: true, action: 'deleted_news' }))
+            .setMimeType(ContentService.MimeType.JSON);
+        }
+      }
+      return ContentService.createTextOutput(JSON.stringify({ success: false, message: 'Elemento non trovato' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
     // 5. AGGIORNA TURNO / SOSTITUTO
     if (action === 'update_turno') {
       var sTu = ss.getSheetByName('Turni');

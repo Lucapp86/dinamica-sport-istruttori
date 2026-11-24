@@ -319,11 +319,9 @@
       // Rimuovi commenti e feedback di prova
       state.feedbacks = (state.feedbacks || []).filter(f => 
         !f.id.startsWith('fb_demo_') && 
-        !f.id.startsWith('fb_1') && 
-        !f.id.startsWith('fb_2') && 
-        !f.id.startsWith('fb_3') &&
-        !(f.text && f.text.includes('far scorrere avanti i bambini in fila')) &&
-        !(f.text && f.text.includes('freccia con gambata rana'))
+        f.id !== 'fb_1' && 
+        f.id !== 'fb_2' && 
+        f.id !== 'fb_3'
       );
 
       const storedNews = localStorage.getItem('dinamica_news');
@@ -331,11 +329,9 @@
       // Rimuovi comunicazioni di prova
       state.news = (state.news || []).filter(n =>
         !n.id.startsWith('news_demo_') &&
-        !n.id.startsWith('news_1') &&
-        !n.id.startsWith('news_2') &&
-        !n.id.startsWith('news_3') &&
-        !(n.title && n.title.includes('Sessione')) &&
-        !(n.title && n.title.includes('Chiusura'))
+        n.id !== 'news_1' &&
+        n.id !== 'news_2' &&
+        n.id !== 'news_3'
       );
 
       const storedTurni = localStorage.getItem('dinamica_turni');
@@ -459,21 +455,17 @@
         if (Array.isArray(data.feedback)) {
           state.feedbacks = data.feedback.filter(f => 
             !f.id.startsWith('fb_demo_') && 
-            !f.id.startsWith('fb_1') && 
-            !f.id.startsWith('fb_2') && 
-            !f.id.startsWith('fb_3') &&
-            !(f.text && f.text.includes('far scorrere avanti i bambini in fila')) &&
-            !(f.text && f.text.includes('freccia con gambata rana'))
+            f.id !== 'fb_1' && 
+            f.id !== 'fb_2' && 
+            f.id !== 'fb_3'
           );
         }
         if (Array.isArray(data.news)) {
           state.news = data.news.filter(n => 
             !n.id.startsWith('news_demo_') && 
-            !n.id.startsWith('news_1') && 
-            !n.id.startsWith('news_2') && 
-            !n.id.startsWith('news_3') &&
-            !(n.title && n.title.includes('Sessione')) &&
-            !(n.title && n.title.includes('Chiusura'))
+            n.id !== 'news_1' && 
+            n.id !== 'news_2' && 
+            n.id !== 'news_3'
           );
         }
         if (Array.isArray(data.turni) && data.turni.length > 0) {
@@ -2028,6 +2020,7 @@
           renderNews();
           updateBadges();
           showToast('Avviso rimosso.');
+          postToGoogleSheets({ action: 'delete_news', id: id });
         }
       }
     });
